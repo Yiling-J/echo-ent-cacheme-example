@@ -7,10 +7,12 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
+	"github.com/mattn/echo-ent-example/cacheme"
+	"github.com/mattn/echo-ent-example/cacheme/fetcher"
 	"github.com/mattn/echo-ent-example/ent"
-	"github.com/mattn/echo-ent-example/ent/comment"
 )
 
 func setupEcho() *echo.Echo {
@@ -27,18 +29,21 @@ type Error struct {
 
 // Controller is a controller for this application.
 type Controller struct {
-	client *ent.Client
+	client  *ent.Client
+	cacheme *cacheme.Client
 }
 
 // GetComment is GET handler to return record.
 func (controller *Controller) GetComment(c echo.Context) error {
 	// fetch record specified by parameter id
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	_, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.Logger().Error("ParseInt: ", err)
 		return c.String(http.StatusBadRequest, "ParseInt: "+err.Error())
 	}
-	comment, err := controller.client.Comment.Get(context.Background(), int(id))
+	comment, err := controller.cacheme.CommentCacheStore.Get(
+		c.Request().Context(), c.Param("id"),
+	)
 	if err != nil {
 		if !ent.IsNotFound(err) {
 			c.Logger().Error("Get: ", err)
@@ -52,12 +57,23 @@ func (controller *Controller) GetComment(c echo.Context) error {
 // ListComments is GET handler to return records.
 func (controller *Controller) ListComments(c echo.Context) error {
 	// fetch last 10 records
-	cq := controller.client.Comment.Query().Order(ent.Desc(comment.FieldCreated)).Limit(10)
-	comments, err := cq.All(context.Background())
+	ids, err := controller.cacheme.CommentListIDSCacheStore.Get(c.Request().Context())
 	if err != nil {
 		c.Logger().Error("All: ", err)
 		return c.String(http.StatusBadRequest, "All: "+err.Error())
 	}
+
+	getter := controller.cacheme.CommentCacheStore.MGetter()
+	for _, id := range ids {
+		getter.GetM(strconv.Itoa(id))
+	}
+	qs, err := getter.Do(c.Request().Context())
+	if err != nil {
+		c.Logger().Error("All: ", err)
+		return c.String(http.StatusBadRequest, "All: "+err.Error())
+	}
+	comments := qs.GetSlice()
+
 	return c.JSON(http.StatusOK, comments)
 }
 
@@ -80,21 +96,28 @@ func (controller *Controller) InsertComment(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Save: "+err.Error())
 	}
 	c.Logger().Infof("inserted comment: %v", newComment.ID)
+	err = controller.cacheme.CommentListIDSCacheStore.Invalid(c.Request().Context())
+	if err != nil {
+		c.Logger().Error("Update cache: ", err)
+		return c.String(http.StatusBadRequest, "Update cache: "+err.Error())
+	}
 	return c.NoContent(http.StatusCreated)
 }
 
 func main() {
+	fetcher.Setup()
 	client, err := ent.Open("postgres", os.Getenv("DSN"))
 	if err != nil {
 		log.Fatalf("failed opening connection to postgres: %v", err)
 	}
+	cm := cacheme.New(redis.NewClient(&redis.Options{Addr: os.Getenv("REDIS")}))
 	defer client.Close()
 
 	// Run the auto migration tool.
 	if err := client.Schema.Create(context.Background()); err != nil {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
-	controller := &Controller{client: client}
+	controller := &Controller{client: client, cacheme: cm}
 
 	e := setupEcho()
 

@@ -11,14 +11,8 @@ require (
 )
 
 require (
-	github.com/labstack/gommon v0.3.0 // indirect
-	github.com/mattn/go-colorable v0.1.8 // indirect
+	github.com/Yiling-J/cacheme-go v0.1.3
+	github.com/go-redis/redis/v8 v8.11.4
 	github.com/mattn/go-isatty v0.0.13 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
-	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasttemplate v1.2.1 // indirect
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
-	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
-	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
-	golang.org/x/text v0.3.6 // indirect
 )
