@@ -111,11 +111,13 @@ func (controller *Controller) InsertComment(c echo.Context) error {
 }
 
 func loopInsert(c *Controller) {
+	var counter int
 	last, err := c.client.Comment.Query().Order(ent.Desc(comment.FieldID)).First(context.TODO())
 	if err != nil {
-		panic(err)
+		counter = 0
+	} else {
+		counter = last.ID
 	}
-	counter := last.ID
 	e := echo.New()
 	for {
 		commentJSON := fmt.Sprintf(`{"name":"foo%d","text":"bar%d"}`, counter, counter)
