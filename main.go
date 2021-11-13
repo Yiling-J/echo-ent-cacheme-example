@@ -2,10 +2,15 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
@@ -13,6 +18,7 @@ import (
 	"github.com/mattn/echo-ent-example/cacheme"
 	"github.com/mattn/echo-ent-example/cacheme/fetcher"
 	"github.com/mattn/echo-ent-example/ent"
+	"github.com/mattn/echo-ent-example/ent/comment"
 )
 
 func setupEcho() *echo.Echo {
@@ -104,7 +110,31 @@ func (controller *Controller) InsertComment(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
+func loopInsert(c *Controller) {
+	last, err := c.client.Comment.Query().Order(ent.Desc(comment.FieldID)).First(context.TODO())
+	if err != nil {
+		panic(err)
+	}
+	counter := last.ID
+	e := echo.New()
+	for {
+		commentJSON := fmt.Sprintf(`{"name":"foo%d","text":"bar%d"}`, counter, counter)
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(commentJSON))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		err = c.InsertComment(ctx)
+		if err != nil {
+			panic(err)
+		}
+		counter++
+		time.Sleep(1 * time.Second)
+	}
+}
+
 func main() {
+	var nFlag = flag.Int("n", 0, "auto insert comments every 1 second")
+	flag.Parse()
 	fetcher.Setup()
 	client, err := ent.Open("postgres", os.Getenv("DSN"))
 	if err != nil {
@@ -120,6 +150,11 @@ func main() {
 	controller := &Controller{client: client, cacheme: cm}
 
 	e := setupEcho()
+
+	if *nFlag == 1 {
+		fmt.Println("start auto comment insert")
+		go loopInsert(controller)
+	}
 
 	e.GET("/api/comments/:id", controller.GetComment)
 	e.GET("/api/comments", controller.ListComments)
