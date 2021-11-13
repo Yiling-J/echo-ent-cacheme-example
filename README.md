@@ -40,7 +40,7 @@ wrk command:
 wrk -t10 -c200 -d60s http://127.0.0.1:8989/ -s pipeline.lua
 ```
 
-**** Benchmark Results:
+#### Benchmark Results:
 
 - Read only:
 ```
