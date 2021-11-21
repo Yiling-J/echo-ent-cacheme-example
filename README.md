@@ -56,7 +56,7 @@ Transfer/sec:     24.63MB
 ```
 - Insert a comment every 1 second:
 
-Change config/base.toml comment.auto_insert to true, build again and start server
+Change `config/base.toml` `comment.auto_insert` to true, build again and start server
 ```
 Running 1m test @ http://127.0.0.1:8989/
   10 threads and 200 connections
