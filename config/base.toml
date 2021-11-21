@@ -1,0 +1,10 @@
+[comment]
+auto_insert = false
+
+[database.pg]
+dsn = ""
+max_idle_connections = 500
+max_open_connections = 1000
+[database.redis]
+address = ""
+db = 0

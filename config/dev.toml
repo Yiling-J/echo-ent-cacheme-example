@@ -1,0 +1,6 @@
+pp_imports = ["base.toml"]
+
+[database.pg]
+dsn = "host=localhost port=5432 user=postgres dbname=postgres password=mysecretpassword sslmode=disable"
+[database.redis]
+address = "localhost:6379"

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"flag"
+	"embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,11 +12,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Yiling-J/piper"
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
 	"github.com/mattn/echo-ent-example/cacheme"
 	"github.com/mattn/echo-ent-example/cacheme/fetcher"
+	"github.com/mattn/echo-ent-example/config"
 	"github.com/mattn/echo-ent-example/ent"
 	"github.com/mattn/echo-ent-example/ent/comment"
 )
@@ -134,15 +136,23 @@ func loopInsert(c *Controller) {
 	}
 }
 
+//go:embed config/*
+var configFS embed.FS
+
 func main() {
-	var nFlag = flag.Int("n", 0, "auto insert comments every 1 second")
-	flag.Parse()
+	// load config first
+	piper.SetFS(configFS)
+	piper.Load("config/dev.toml")
+
+	// setup cacheme fetcher
 	fetcher.Setup()
-	client, err := ent.Open("postgres", os.Getenv("DSN"))
+	client, err := ent.Open("postgres", piper.IGetString(config.Database.Pg.Dsn))
 	if err != nil {
 		log.Fatalf("failed opening connection to postgres: %v", err)
 	}
-	cm := cacheme.New(redis.NewClient(&redis.Options{Addr: os.Getenv("REDIS")}))
+	cm := cacheme.New(redis.NewClient(&redis.Options{
+		Addr: piper.IGetString(config.Database.Redis.Address),
+	}))
 	defer client.Close()
 
 	// Run the auto migration tool.
@@ -153,7 +163,7 @@ func main() {
 
 	e := setupEcho()
 
-	if *nFlag == 1 {
+	if piper.IGetBool(config.Comment.Autoinsert) {
 		fmt.Println("start auto comment insert")
 		go loopInsert(controller)
 	}

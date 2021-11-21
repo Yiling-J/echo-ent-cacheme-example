@@ -2,17 +2,18 @@ package fetcher
 
 import (
 	"context"
-	"os"
 	"strconv"
 
+	"github.com/Yiling-J/piper"
 	"github.com/mattn/echo-ent-example/cacheme"
+	"github.com/mattn/echo-ent-example/config"
 	"github.com/mattn/echo-ent-example/ent"
 	"github.com/mattn/echo-ent-example/ent/comment"
 )
 
 func Setup() {
 
-	client, err := ent.Open("postgres", os.Getenv("DSN"))
+	client, err := ent.Open("postgres", piper.IGetString(config.Database.Pg.Dsn))
 	if err != nil {
 		panic(err)
 	}

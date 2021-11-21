@@ -4,9 +4,9 @@ Example application of Echo (Go web framework) and Entgo (ORM) and Cacheme (Cach
 
 ## Usage
 
-Set $DSN for PostgreSQL connection string.
+Update config/dev.toml database.pg.dsn to PostgreSQL connection string.
 
-Set $REDIS for Redis connection string(local example: localhost:6379).
+Update config/dev.toml database.redis.address to Redis connection string(local example: localhost:6379).
 
 ## Installation
 
@@ -56,7 +56,7 @@ Transfer/sec:     24.63MB
 ```
 - Insert a comment every 1 second:
 
-start server with `-n=1` param
+Change config/base.toml comment.auto_insert to true, build again and start server
 ```
 Running 1m test @ http://127.0.0.1:8989/
   10 threads and 200 connections
