@@ -4,9 +4,9 @@ Example application of Echo (Go web framework) and Entgo (ORM) and Cacheme (Cach
 
 ## Usage
 
-Update config/dev.toml database.pg.dsn to PostgreSQL connection string.
+Update `config/dev.toml` `database.pg.dsn` to PostgreSQL connection string.
 
-Update config/dev.toml database.redis.address to Redis connection string(local example: localhost:6379).
+Update `config/dev.toml` `database.redis.address` to Redis connection string(local example: localhost:6379).
 
 ## Installation
 
