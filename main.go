@@ -18,6 +18,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/mattn/echo-ent-example/cacheme"
 	"github.com/mattn/echo-ent-example/cacheme/fetcher"
+	"github.com/mattn/echo-ent-example/cacheme/store"
 	"github.com/mattn/echo-ent-example/config"
 	"github.com/mattn/echo-ent-example/ent"
 	"github.com/mattn/echo-ent-example/ent/comment"
@@ -38,7 +39,7 @@ type Error struct {
 // Controller is a controller for this application.
 type Controller struct {
 	client  *ent.Client
-	cacheme *cacheme.Client
+	cacheme *store.Client
 }
 
 // GetComment is GET handler to return record.
